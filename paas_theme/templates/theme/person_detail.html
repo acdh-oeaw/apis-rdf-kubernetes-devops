@@ -1,0 +1,422 @@
+{% extends "theme/base.html" %}
+{% load leaflet_tags %}
+{% block scriptHeader %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/spin.js/2.3.2/spin.min.js"></script>
+<script crossorigin src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/three@latest/build/three.min.js"></script>
+<script crossorigin
+  src="https://unpkg.com/@acdh/network-visualization@latest/lib/network-visualization.umd.js"></script>
+
+{% leaflet_js %}
+{% leaflet_css %}
+{% endblock %}
+{% load static %}
+{% load webpage_extras %}
+{% load custom_tags %}
+{% block title %}{{ object }}{% endblock %}
+{% block content %}
+<div id="contentDetails" class="container">
+  <div class="row bio-outer">
+    <div class="col-md-12 pb-4">
+      <div class="row justify-content-between pt-3">
+        <div class="col-md-auto">
+          {% if prev.id %}
+          <a class="card-link preventity" href="{% url 'theme:person-detail' pk=prev.id %}" title="{{ prev }}">
+            &larr; {{ prev }}
+          </a>
+          {% endif %}
+        </div>
+        <div class="col"></div>
+        <div class="col-md-auto">
+          {% if next.id %}
+          <a class="card-link nextentity" href="{% url 'theme:person-detail' pk=next.id %}" title="{{ next }}">
+            {{ next }} &rarr;
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-12">
+      <article class="bio">
+        <div class="entry-header">
+          <!--<div class="row">
+            <div class="col">
+              <h2>{{ object.name }}{%if object.first_name %}, {{ object.first_name }}{% endif %}</h2>
+            </div>
+          </div>-->
+        </div>
+        <div id="main" class="card-body">
+          <div class="row">
+            <div class="col-md-5 bg-mine border-mine pl-1 pr-0">
+              <h1 class="font-weight-normal float-md-left pt-1 pb-4" style="width:calc(100% - 110px)">
+                <!--{{ object.name }}{%if object.first_name %}, {{ object.first_name }}{% endif %}-->
+                {%if object.first_name %}{{ object.first_name }}{% endif %}<br />
+                {{ object.name }}
+              </h1>
+
+              <div class="imgcontainer">
+                {% if image %}
+                {% if image.0 %}
+                <img class="float-md-right" style="max-width:110px;" src="{% static image.1 %}">
+                {% else %}
+                <figure class="float-md-right" style="max-width:110px;">
+                  <img src="{{image.1}}">
+                  <figcaption id="photocredit" class="figure-caption text-08 text-center" data-photourl="{{image.1}}"></figcaption>
+                </figure>
+                {% endif %}
+                {% else %}
+                <img class="float-md-right" style="max-width:110px;" src="https://via.placeholder.com/110x134">
+                {% endif %}
+              </div>
+
+              <p class="profession-date-of-birth">
+                {% if profession %}<span class="font-weight-bold">{{ profession }}</span> <br />{% endif %}
+                <span class="font-weight-normal"><abbr
+                    title="geboren">*</abbr>{% if object.start_date_written is not None %}
+                  {{object.start_date_written }}{% if place_of_birth is not None %}
+                  ({{place_of_birth}}){% endif %}{% else %} -{% endif %}</span><br />
+                <span class="font-weight-normal"><abbr title='gestorben'>&dagger;</abbr>
+                  {% if object.end_date_written is not None %}
+                  {{object.end_date_written }}{% if place_of_death is not None %}
+                  ({{place_of_death}}){% endif %}{% else %} -{% endif %}</span>
+              </p>
+
+
+              {% if mitgliedschaften %}
+              <div class="section">
+                <span class="font-weight-bold">Mitgliedschaft</span>
+                <ul class="relentities">
+                  {% for x in mitgliedschaften %}
+                  <li class="pl-0 font-weight-normal pb-0" style="padding-bottom: 0.8em">
+                    {{x|safe}}
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+
+              {% endif %}
+              {% if normdaten %}
+              <div class="section">
+                <span class="font-weight-bold">Online-Ressourcen</span>
+                <ul class="uris pl-0">
+                  {% for nd in normdaten %}
+                  <li class="pl-0 font-weight-normal">{{nd.kind}} <a target="_blank" rel="noopener noreferrer"
+                      href="{{nd.uri}}">{{nd.identifier}}</a></li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% endif %}
+              <div class="section">
+                <span class="font-weight-bold">Downloads</span>
+                <ul class="uris pl-0">
+                  <li class="pl-0 font-weight-normal"><a target="_blank" rel="noopener noreferrer"
+                      href="/apis/api/entities/person/{{object.pk}}/?format=json">Json</a></li>
+                  <li class="pl-0 font-weight-normal"><a target="_blank" rel="noopener noreferrer"
+                      href="/apis/api2/entity/{{object.pk}}/?format=rdf%2Bturtle">RDF/Turtle</a></li>
+                  <li class="pl-0 font-weight-normal"><a target="_blank" rel="noopener noreferrer"
+                      href="/apis/api2/entity/{{object.pk}}/?format=tei">TEI</a></li>
+                </ul>
+              </div>
+            </div>
+            <div class="col-md-7 pr-0  mine-pl-30">
+              <ul class="nav nav-tabs border-0" id="myTab" role="tablist">
+                <li class="nav-item p-0 font-weight-bold" role="presentation">
+                  <a class="nav-link rounded-0 active text-uppercase" data-toggle="tab" id="daten-tab" href="#daten"
+                    role="tab" aria-controls="home" aria-selected="true">Biographie</a>
+                </li>
+                <li class="nav-item p-0 font-weight-bold" role="presentation">
+                  <a class="nav-link rounded-0 text-uppercase align-bottom" data-toggle="tab" id="egonet-tab"
+                    href="#egonet" role="tab" aria-controls="egonet" aria-selected="false">Egonetzwerk</a>
+                </li>
+                <li class="nav-item p-0 font-weight-bold" role="presentation">
+                  <a class="nav-link rounded-0 text-uppercase" data-toggle="tab" id="map-tab" href="#map" role="tab"
+                    role="tab" aria-controls="map" aria-selected="false">Karte</a>
+                </li>
+              </ul>
+              <div class="tab-content bg-mine" id="myTabContent">
+                <div class="tab-pane fade show active" id="daten" role="tabpanel" aria-labelledby="daten-tab">
+                  {% for key, value in daten_akademie.items %}
+                  {% if value|length > 0 %}
+                  <div class="card mt-2 mb-4 rounded-0">
+                    <div class="card-header p-0 bg-white" id="heading{{key}}">
+                      <h5 class="mb-0">
+                        <button type="button"
+                          class="btn btn-link collapsebtn w-100 text-left collapsed p-0 pl-1 text-09"
+                          data-toggle="collapse" data-target="#{{ key | cut:' '}}" aria-expanded="true"
+                          aria-controls="{{key | cut:' '}}">
+                          <b>{{ key }}</b>
+                          <i class="chevron-up" data-feather="chevron-up"></i>
+                        </button>
+                      </h5>
+                    </div>
+                    <div id="{{key | cut:' '}}" class="collapse" aria-labelledby="heading{{key | cut:' '}}">
+                      <div class="card-body p-2 pl-3 pr-3 show-limited-number text-09">
+                        <ul class="pl-0 mb-0">
+                          {% for ent in value %}
+                          <li class="font-weight-normal pb-0" style="list-style-type:none; padding-bottom: 0.5em">
+                            {{ent|safe}}</li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  {% endif %}
+                  {% endfor %}
+                </div>
+                <div class="tab-pane fade" id="egonet" role="tabpanel" aria-labelledby="egonet-tab">
+                  <div id="egonetworkwrapper" class="row m-0" data-status="minimized">
+                    <div id="egonetspinner" class="col-md-12">
+                      <div class="spinner-grow" role="status">
+                        <span class="sr-only">Loading...</span>
+                      </div>
+                    </div>
+                    <a class="leaflet-control-zoom-in" id="moveegontwbtn" role="button" onclick="move_network('up')">
+                      <i data-feather="maximize-2"></i>
+                    </a>
+                    <div id="egonetwork_visualization" class="col-md-12"></div>
+                    <div id="node-info" class="d-none">
+                      <small>Für Zusatzinfos auf Knoten klicken</small>
+                        <ul>
+                          <li data-src='type'></li>
+                          <li><a data-src='link' target="_blank" rel="noopener" href=""></a></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="map" role="tabpanel" aria-labelledby="map-tab">
+                  <div id="maplifeline">
+                    <a class="leaflet-control-zoom-in" id="maplifelinebtn" role="button" onclick="move_map()">
+                      <i data-feather="maximize-2"></i>
+                    </a>
+                    <div class="row m-0">
+                      <div class="col-md-7">
+                        <div class="inline-map">
+                          {% leaflet_map "map-container" %}
+                        </div>
+                      </div>
+                      <div class="col-md-5 p-0">
+                        {% include "theme/spacetime_graph.html" %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+      </article>
+    </div>
+  </div>
+</div>
+<div id="maplifelinemodal" class="modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Modal title</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Modal body text goes here.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary">Save changes</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+{% block scripts %}
+<script type="text/javascript" src="{%static 'theme/js/helpers.js' %}"></script>
+<script type="text/javascript" src="{%static 'theme/js/map.js' %}"></script>
+<script>
+  var personPk = "{{object.pk}}";
+  var baseURL = "{% url 'apis:apis_api2:GetRelatedPlaces' %}";
+
+
+  initMap(baseURL, personPk);
+
+  $('#myTab').on('shown.bs.tab', function (e) {
+    if (e.target.id === 'map-tab') {
+      adjustSize();
+    }
+  });
+</script>
+<script>
+  function getEgoNetworkViz(offset) {
+    document.querySelector("#egonetspinner").style.display = "flex";
+    console.log("function fired")
+    let urlParams = new URLSearchParams(window.location.search);
+    const endpoint = '/api/egonetwork/';
+    let selectedNodes = {};
+    let nodesDetails = {};
+
+    urlParams.append('format', 'json+net');
+    urlParams.append('limit', '1000')
+    urlParams.append('offset', offset)
+    urlParams.append('pk', '{{object.pk}}')
+    let url = new URL(endpoint, window.location.origin)
+    urlParams.forEach((value, key) => {
+      console.log(key);
+      url.searchParams.set(key, value)
+    });
+    console.log(url);
+    fetch(url)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(response.statusText)
+        }
+        let loader = document.getElementById("loader");
+        if (loader) {
+          loader.remove();
+        }
+        return response.json()
+      })
+      .then(data => {
+        document.querySelector("#egonetspinner").style.display = "none";
+        if (data['next']) {
+          let urlparams = new URLSearchParams(data['next'])
+          if (!document.getElementById('loadmore')) {
+            console.log('more than 1000')
+            let b_more = document.createElement('DIV')
+            b_more.id = "loadmore"
+            b_more.style = "width:100%; height:50px; color: grey;"
+            b_more.append(document.createTextNode('Mehr als 1000 Verbindungen geladen! '))
+            let b_more_link = document.createElement('Button')
+            b_more_link.onclick = function () { getEgoNetworkViz("test", urlparams.get('offset')) };
+            b_more_link.append(document.createTextNode('Clicken um weiter zu laden.'))
+            b_more.append(b_more_link)
+            let cv = document.getElementById('banner_viz')
+            cv.prepend(b_more)
+          } else {
+            let b_more_link = document.querySelector('#loadmore > a:first-of-type')
+            b_more_link.onclick = function () { getEgoNetworkViz("test", urlparams.get('offset')) }
+          }
+        } else if (document.getElementById('loadmore')) {
+          document.getElementById('loadmore').remove()
+        }
+        const edges = {}
+        const nodes = {}
+        const types = { edges: {}, nodes: {} }
+        let type_source
+        let type_target
+        const type_definitions = {
+          "Person": {
+            id: "Person",
+            label: "Person",
+            color: "#DB2B39"
+          },
+          "Place": {
+            id: 'Place',
+            label: 'Ort',
+            color: 'rebeccapurple',
+          },
+
+          "Institution": {
+            id: 'Institution',
+            label: 'Institution',
+            color: '#344055',
+          }
+        }
+        var match_entities = /entities\/(\w+)/;
+        var base_url = window.location;
+        data.results.forEach(relation => {
+          const { id, source, target, relation_type: relationType } = relation
+          type_source = match_entities.exec(source.url)[1]
+          type_target = match_entities.exec(target.url)[1]
+          type_source = type_source.charAt(0).toUpperCase() + type_source.slice(1)
+          type_target = type_target.charAt(0).toUpperCase() + type_target.slice(1)
+          edges[id] = {
+            id,
+            source: source.id,
+            target: target.id,
+            type: relationType.id,
+          }
+          nodes[source.id] = {
+            id: source.id,
+            label: source.label,
+            type: type_source,
+            url: `${base_url.protocol}//${base_url.host}/${type_source.toLowerCase()}/${source.id}`
+          }
+          nodes[target.id] = {
+            id: target.id,
+            label: target.label,
+            type: type_target,
+            url: `${base_url.protocol}//${base_url.host}/${type_target.toLowerCase()}/${target.id}`
+          }
+          types.edges[relationType.id] = {
+            id: relationType.id,
+            label: relationType.label,
+          }
+        })
+        types.nodes[type_source] = type_definitions[type_source]
+        types.nodes[type_target] = type_definitions[type_target]
+        ReactDOM.render(
+          React.createElement(NetworkVisualization.SelectionControls, {
+            graph: {
+              edges,
+              nodes,
+              types,
+            },
+            colors:{ selected: '#a8a8ad'},
+            showLabels:false,
+            nodeRelativeSize: 5,
+            simulation: {
+              charge: -50
+            },
+            onNodeSelect: (node, selected) => {
+                let selArray = [...selected];
+                if (selArray.length > 1) {
+                  selected.delete(selArray[selArray.length-1]);
+                }
+                showNodeInfo(node);
+            },
+            onNodeDeselect: (node) => {
+              clearNodeInfo();
+            },
+            children: props => [
+              //React.createElement(NetworkVisualization.ExportButton, props),
+              React.createElement(NetworkVisualization.Legend, props),
+            ],
+          }),
+          document.getElementById('egonetwork_visualization')
+        );
+      })
+      .catch(error => {
+        console.error(error)
+      })
+  };
+
+</script>
+<script>
+  const egotab = document.getElementById("egonet-tab")
+  egotab.addEventListener("click", function () { getEgoNetworkViz(0) }, false)
+</script>
+<script>
+  async function getMetadataPhoto(title = '') {
+    console.log(title)
+    let url = `https://commons.wikimedia.org/w/api.php?action=query&titles=Image:${title}&prop=imageinfo&iiprop=extmetadata&format=json&origin=*`
+    console.log(url)
+    const response = await fetch(url,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+    return response.json();
+  }
+  function add_metadata_photo() {
+    const photo = document.getElementById("photocredit")
+    if (photo) {
+      let title = photo.dataset.photourl.match("[^/]+$")[0]
+      getMetadataPhoto(title).then(data => {
+        photo.insertAdjacentHTML('beforeend', data.query.pages[Object.keys(data.query.pages)[0]].imageinfo[0].extmetadata.Credit.value.replace(/>.*</, ">Credit<"));
+      })
+    }
+  }
+  window.onload = add_metadata_photo
+</script>
+{% endblock %}

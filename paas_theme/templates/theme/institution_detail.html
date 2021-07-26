@@ -1,0 +1,235 @@
+{% extends "theme/base.html" %}
+{% load leaflet_tags %}
+{% block scriptHeader %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/spin.js/2.3.2/spin.min.js"></script>
+<script crossorigin src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/three@latest/build/three.min.js"></script>
+<script crossorigin
+  src="https://unpkg.com/@acdh/network-visualization@latest/lib/network-visualization.umd.js"></script>
+
+{% leaflet_js %}
+{% leaflet_css %}
+{% endblock %}
+{% load static %}
+{% load webpage_extras %}
+{% load custom_tags %}
+{% block title %}{{ object }}{% endblock %}
+{% block content %}
+<div id="contentDetails" class="container">
+  <div class="row bio-outer">
+    <div class="col-md-12 pb-4">
+      <div class="row justify-content-between pt-3">
+        <div class="col-4">
+          {% if prev.id %}
+          <a class="card-link preventity" href="{% url 'theme:institution-detail' pk=prev.id %}" title="{{ prev }}">
+            <span class="d-inline-block w-100">
+              <span class="d-inline-block float-left w-10">&larr;&nbsp;</span>
+              <span class="d-inline-block text-truncate w-90 text-left float-left">{{ prev }}</span>
+          </span>
+          </a>
+          {% endif %}
+        </div>
+        <div class="col-4 col-offset-8">
+          {% if next.id %}
+          <a class="card-link nextentity" href="{% url 'theme:institution-detail' pk=next.id %}" title="{{ next }}">
+            <span class="d-inline-block text-right w-100">
+            <span class="d-inline-block text-truncate w-90 text-right float-left">{{ next }}</span>
+            <span class="d-inline-block float-left w-10">&rarr;</span>
+          </span>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-12">
+      <article class="bio">
+        <div class="entry-header">
+          <!--<div class="row">
+            <div class="col">
+              <h2>{{ object.name }}{%if object.first_name %}, {{ object.first_name }}{% endif %}</h2>
+            </div>
+          </div>-->
+        </div>
+        <div id="main" class="card-body">
+          <div class="row">
+            <div class="col-md-5 bg-mine border-mine-green pl-1 pr-0">
+              <h1 class="font-weight-normal  pt-1 pb-4" style="width:calc(100% - 110px)">
+                <!--{{ object.name }}{%if object.first_name %}, {{ object.first_name }}{% endif %}-->
+                {{ object.name }}
+              </h1>
+              <h4>{{untertitel}}</h4>
+              {% if akademie %}
+              <h6>Akademieinstitution</h6>
+              {% endif %}
+
+              <!--<div class="imgcontainer">
+                {% if image %}
+                <img class="float-md-right" style="max-width:110px;" src="{% static image %}">
+                {% else %}
+                <img class="float-md-right" style="max-width:110px;" src="https://via.placeholder.com/110x134">
+                {% endif %}
+              </div>-->
+
+              <p class="profession-date-of-birth">
+                {% if object.kind %}<span>{{ object.kind.name }}</span> <br />{% endif %}
+                <span class="font-weight-normal">{% if object.start_date_written is not None %}
+                     {{object.start_date_written }}{% endif %}
+                  {% if object.end_date_written is not None %}
+                  &ndash;
+                  {{object.end_date_written }}{% endif %}
+                  </span>
+              </p>
+              
+
+              {% if struktur %}
+              <div class="section">
+                <span class="font-weight-bold">Struktur der Komission</span>
+                <ul class="relentities">
+                  {% for x in struktur %}
+                  <li class="pl-0 font-weight-normal pb-0" style="padding-bottom: 0.8em">
+                    {{x|safe}}
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% endif %}
+              {% if gelegen_in %}
+              <div class="section">
+                <span class="font-weight-bold">Ort</span>
+                <div id="institution_map" data-lat={{gelegen_in.0}} data-lng={{gelegen_in.1}}>{% leaflet_map "institution_map" callback="window.map_institution" %}</div>
+              </div>
+              {% endif %}
+
+             
+              {% if normdaten %}
+              <div class="section">
+                <span class="font-weight-bold">Online-Ressourcen</span>
+                <ul class="uris pl-0">
+                  {% for nd in normdaten %}
+                  <li class="pl-0 font-weight-normal">{{nd.kind}} <a target="_blank" rel="noopener noreferrer"
+                      href="{{nd.uri}}">{{nd.identifier}}</a></li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% endif %}
+              <div class="section">
+                <span class="font-weight-bold">Downloads</span>
+                <ul class="uris pl-0">
+                  <li class="pl-0 font-weight-normal"><a target="_blank" rel="noopener noreferrer"
+                      href="/apis/api/entities/institution/{{object.pk}}/?format=json">Json</a></li>
+                  <li class="pl-0 font-weight-normal"><a target="_blank" rel="noopener noreferrer"
+                      href="/apis/api2/entity/{{object.pk}}/?format=rdf%2Bturtle">RDF/Turtle</a></li>
+                  <li class="pl-0 font-weight-normal"><a target="_blank" rel="noopener noreferrer"
+                      href="/apis/api2/entity/{{object.pk}}/?format=tei">TEI</a></li>
+                </ul>
+              </div>
+            </div>
+            <div class="col-md-7 pr-0  mine-pl-30">
+              <ul class="nav nav-tabs border-0" id="institutionTab" role="tablist">
+                <li class="nav-item p-0 font-weight-bold" role="presentation">
+                  <a class="nav-link rounded-0 active text-uppercase" data-toggle="tab" id="daten-tab" href="#daten"
+                    role="tab" aria-controls="home" aria-selected="true">Daten</a>
+                </li>
+                <!--<li class="nav-item p-0 font-weight-bold" role="presentation">
+                  <a class="nav-link rounded-0 text-uppercase align-bottom" data-toggle="tab" id="egonet-tab"
+                    href="#egonet" role="tab" aria-controls="egonet" aria-selected="false">Egonetzwerk</a>
+                </li>
+                <li class="nav-item p-0 font-weight-bold" role="presentation">
+                  <a class="nav-link rounded-0 text-uppercase" data-toggle="tab" id="map-tab" href="#map" role="tab"
+                    role="tab" aria-controls="map" aria-selected="false">Karte</a>
+                </li>-->
+              </ul>
+              <div class="tab-content bg-mine" id="myTabContent">
+                <div class="tab-pane fade show active" id="daten" role="tabpanel" aria-labelledby="daten-tab">
+                  {% for key, value in daten_institution.items %}
+                  {% if value|length > 0 %}
+                  <div class="card mt-2 mb-4 rounded-0">
+                    <div class="card-header p-0 bg-white" id="heading{{key}}">
+                      <h5 class="mb-0">
+                        <button type="button"
+                          class="btn btn-link collapsebtn w-100 text-left collapsed p-0 pl-1 text-09"
+                          data-toggle="collapse" data-target="#{{ key | cut:' ' | cut:'/'}}" aria-expanded="true"
+                          aria-controls="{{key | cut:' ' | cut:'/'}}">
+                          <b>{{ key }}</b>
+                          <i class="chevron-up" data-feather="chevron-up"></i>
+                        </button>
+                      </h5>
+                    </div>
+                    <div id="{{key | cut:' ' | cut:'/'}}" class="collapse" aria-labelledby="heading{{key | cut:' ' | cut:'/'}}">
+                      <div class="card-body p-2 pl-3 pr-3 show-limited-number text-09">
+                        <ul class="pl-0 mb-0">
+                          {% for ent in value %}
+                          <li class="font-weight-normal pb-0" style="list-style-type:none; padding-bottom: 0.5em">
+                            {{ent|safe}}</li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  {% endif %}
+                  {% endfor %}
+                </div>
+                <div class="tab-pane fade" id="egonet" role="tabpanel" aria-labelledby="egonet-tab">
+                  <div id="egonetspinner">
+                  <div class="spinner-grow" role="status">
+                    <span class="sr-only">Loading...</span>
+                  </div>
+                </div>
+                  <div id="egonetwork_visualization"></div>
+                </div>
+                <div class="tab-pane fade" id="map" role="tabpanel" aria-labelledby="map-tab">
+                  <div id="maplifeline">
+                    <a class="leaflet-control-zoom-in" id="maplifelinebtn" role="button" onclick="move_map()">
+                      <i data-feather="maximize-2"></i>
+                    </a>
+                    <div class="row m-0">
+                      <div class="col-md-7">
+                        <div class="inline-map">
+                          {% leaflet_map "map-container" %}
+                        </div>
+                      </div>
+                      <div class="col-md-5 p-0">
+                        {% include "theme/spacetime_graph.html" %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+      </article>
+    </div>
+  </div>
+</div>
+<div id="maplifelinemodal" class="modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Modal title</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Modal body text goes here.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary">Save changes</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+{% block scripts %}
+<script>
+    function map_institution(map, options) {
+      options.zoom = 12
+        let loc = document.getElementById("institution_map")
+        console.log(loc)
+        L.marker([loc.dataset.lat.replace(",", "."), loc.dataset.lng.replace(",", ".")]).addTo(map);
+        map.setView([loc.dataset.lat.replace(",", "."), loc.dataset.lng.replace(",", ".")], 4);
+    }
+</script>
+{% endblock %}
