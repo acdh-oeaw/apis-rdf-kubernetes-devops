@@ -52,7 +52,6 @@ CRISPY_TEMPLATE_PACK = "acdh_mine"
 CRISPY_ALLOWED_TEMPLATE_PACKS = ("bootstrap", "acdh_mine")
 
 # HAYSTACK_DEFAULT_OPERATOR = "OR"
-INSTALLED_APPS += ["leaflet"]
 
 SECRET_KEY = (
     "d3j@454545()(/)@zlck/6dsaf*#sdfsaf*#sadflj/6dsfk-11$)d6ixcvjsdfsdf&-u35#ayi"
