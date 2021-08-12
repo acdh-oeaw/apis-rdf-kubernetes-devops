@@ -32,15 +32,8 @@ ALLOWED_HOSTS = re.sub(
     os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,paas.acdh-dev.oeaw.ac.at"),
 ).split(",")
 # You need to allow '10.0.0.0/8' for service health checks.
-ALLOWED_CIDR_NETS = ["10.0.0.0/8", "127.0.0.0/8"]
 
-HAYSTACK_CONNECTIONS = {
-    "default": {
-        "ENGINE": "haystack.backends.solr_backend.SolrEngine",
-        "URL": f"http://{os.environ.get('PAAS_HAYSTACK_URL', 'paassolr')}:8983/solr/{os.environ.get('PAAS_HAYSTACK_CORE', 'paas_solr')}",
-        "ADMIN_URL": f"http://{os.environ.get('PAAS_HAYSTACK_URL', 'paassolr')}:8983/solr/admin/cores",
-    }
-}
+ALLOWED_CIDR_NETS = ["10.0.0.0/8", "127.0.0.0/8"]
 
 REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"] = (
     # "rest_framework.permissions.DjangoModelPermissions",
@@ -48,8 +41,6 @@ REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"] = (
     # "rest_framework.permissions.DjangoObjectPermissions",
     # use IsAuthenticated for every logged in user to have global edit rights
 )
-CRISPY_TEMPLATE_PACK = "acdh_mine"
-CRISPY_ALLOWED_TEMPLATE_PACKS = ("bootstrap", "acdh_mine")
 
 # HAYSTACK_DEFAULT_OPERATOR = "OR"
 
